@@ -6,6 +6,6 @@ const router = Router();
 
 router.post("/add", isAuthenticated, addFriend);
 router.post("/remove", isAuthenticated, removeFriend);
-router.get("/list", getFriends);
+router.get("/list", isAuthenticated, getFriends);
 
 export default router;
