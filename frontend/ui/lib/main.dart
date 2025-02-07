@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:http/http.dart' as http;
 
 /// Flutter code sample for [AboutListTile].
 
@@ -110,6 +113,42 @@ class _MyHomePageState extends State<MyHomePage> {
                 // _onItemTapped();
                 // Then close the drawer
                 Navigator.pop(context);
+                showDialog(
+                context: context,
+                builder: (BuildContext context) {
+                  return AlertDialog(
+                    scrollable: true,
+                    title: Text('Add Friendly Users'),
+                    content: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Form(
+                        child: Column(
+                          children: <Widget>[
+                            TextFormField(
+                              decoration: InputDecoration(
+                                labelText: 'Name',
+                                icon: Icon(Icons.account_box),
+                              ),
+                            ),
+                            TextFormField(
+                              decoration: InputDecoration(
+                                labelText: 'Email',
+                                icon: Icon(Icons.email),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                     actions: [
+                      ElevatedButton(
+                          child: Text("Submit"),
+                          onPressed: () {
+                            // your code
+                          })
+                    ],
+                  );
+                });
               },
             ),
             ListTile(
@@ -126,7 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
               title: Row(
                 spacing: 30,
                 children: [
-                  const Text('School'),
+                  const Text('Log Out!'),
                   Icon(Icons.exit_to_app)
                 ],
               ),
@@ -175,6 +214,27 @@ class _MappsState extends State<Mapps> {
       currentPosition = LatLng(position.latitude, position.longitude);
     });
     _mapController.move(currentPosition, 16);
+    _sendLocationtoFlask(currentPosition);
+  }
+
+  void _sendLocationtoFlask(LatLng location) async {
+    const String flaskEndpoint = 'http://172.16.16.125:5000/api';
+
+    try {
+      final response = await http.post(
+        Uri.parse(flaskEndpoint),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, double>{
+          'latitude': location.latitude,
+          'longitude': location.longitude,
+        }),
+      );
+
+    } catch (e) {
+      print(e);
+    }
   }
   
   @override
