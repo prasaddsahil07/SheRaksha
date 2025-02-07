@@ -29,7 +29,7 @@ export const register = catchAsyncErrors(async (req, res, next) => {
 export const login = catchAsyncErrors(async (req, res, next) => {
     const { email, password, gender } = req.body;
     if (!email || !password || !gender) {
-        return next(new ErrorHandler("Please provide email ,password and role."));
+        return next(new ErrorHandler("Please provide email ,password and gender."));
     }
     const user = await User.findOne({ email });
     if (!user) {
