@@ -8,69 +8,93 @@ import { errorMiddleware } from "./middleware/error.js";
 import userRouter from "./routes/User.route.js";
 import friendRouter from "./routes/Friend.route.js";
 import locationRouter from "./routes/Location.route.js";
-// import { initSocket } from './services/socketService.js';
-
-// import authMiddlewareSocket from "./middleware/authMiddlewareSocket.js"; // For socket authentication
+import { Server } from "socket.io";
+import User from "./models/User.model.js";
 
 dotenv.config();
 
 const app = express();
-// const server = http.createServer(app); // Create HTTP server for Express
-// initSocket(server);
-
-app.use(
-    cors({
-        origin: [process.env.FRONTEND_URL],
-        method: ["GET", "POST", "DELETE", "PUT"],
-        credentials: true,
-    })
-);
-  
-app.use(cookieParser());      // for authorization, cookie parser is mandatory
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL,
+    methods: ["GET", "POST", "DELETE", "PUT"],
+    credentials: true,
+  },
+});
 
 await connectDB();
 
-// Listen for WebSocket connections
-// io.on("connection", async (socket) => {
-//   console.log("User connected:", socket.id);
+const userSockets = new Map(); // Stores userId -> socketId mapping
 
-//   // Authenticate socket connection
-//   authMiddlewareSocket(socket, async (err, userId) => {
-//     if (err) {
-//       console.error("Authentication failed:", err);
-//       return socket.disconnect();
-//     }
+io.on("connection", async (socket) => {
+  console.log("User connected:", socket.id);
 
-//     console.log("Authenticated user:", userId);
+  socket.on("join-room", (userId) => {
+    userSockets.set(userId, socket.id); // Store the user's socket ID
+    console.log(`User ${userId} joined with socket ${socket.id}`);
+  });
 
-//     // Listen for "updateLocation" event
-//     socket.on("updateLocation", async ({ lat, lon }) => {
-//       try {
-//         // Update user location in DB
-//         await User.findByIdAndUpdate(userId, { location: { lat, lon } });
-//         console.log(`Updated location for user ${userId}: (${lat}, ${lon})`);
-//       } catch (error) {
-//         console.error("Error updating location:", error);
-//       }
-//     });
+  socket.on("send-location", async ({ userId, lat, lon }) => {
+    try {
+      // Fetch user's friends from DB
+      const user = await User.findById(userId).populate("friends");
 
-//     socket.on("disconnect", () => {
-//       console.log("User disconnected:", userId);
-//     });
-//   });
-// });
+      if (!user) return;
+
+      // Send location only to the user's friends
+      user.friends.forEach((friend) => {
+        const friendSocketId = userSockets.get(friend._id.toString());
+        if (friendSocketId) {
+          io.to(friendSocketId).emit("receive-location", { userId, lat, lon });
+        }
+      });
+    } catch (error) {
+      console.error("Error broadcasting location:", error);
+    }
+  });
+
+  socket.on("send-emergency", async ({ userId, lat, lon, image, audio }) => {
+    try {
+      // Fetch user's friends from DB
+      const user = await User.findById(userId).populate("friends");
+
+      if (!user) return;
+
+      // Send emergency alert to all friends
+      user.friends.forEach((friend) => {
+        const friendSocketId = userSockets.get(friend._id.toString());
+        if (friendSocketId) {
+          io.to(friendSocketId).emit("receive-emergency", { userId, lat, lon, image, audio });
+        }
+      });
+    } catch (error) {
+      console.error("Error broadcasting emergency alert:", error);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+    userSockets.forEach((value, key) => {
+      if (value === socket.id) {
+        userSockets.delete(key);
+      }
+    });
+  });
+});
+
+// Express Middleware
+app.use(cors({ origin: process.env.FRONTEND_URL, methods: ["GET", "POST", "DELETE", "PUT"], credentials: true }));
+app.use(cookieParser());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/friend", friendRouter);
 app.use("/api/v1/location", locationRouter);
-
-
 app.use(errorMiddleware);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}...`));
-
+server.listen(PORT, () => console.log(`Server running on port ${PORT}...`));
 
 export default app;

@@ -55,3 +55,9 @@ export const getFriends = catchAsyncErrors(async (req, res, next) => {
     const user = await User.findById(req.userId).populate('friends', 'name email');
     res.status(200).json({ success: true, friends: user.friends });
 });
+
+// Update a friend's detail
+export const updateFriend = catchAsyncErrors(async (req, res, next) => {
+    const user = await User.findById(req.userId).populate('friends', 'name email');
+    res.status(200).json({ success: true, friends: user.friends });
+});
