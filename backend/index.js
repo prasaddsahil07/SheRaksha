@@ -10,17 +10,16 @@ import locationRouter from "./routes/Location.route.js";
 import messageRouter from "./routes/Message.route.js";
 import { app, server } from "./utils/socket.js";
 
-
 dotenv.config();
 
 await connectDB();
 
-
 // Express Middleware
 app.use(cors({ origin: process.env.FRONTEND_URL, methods: ["GET", "POST", "DELETE", "PUT"], credentials: true }));
 app.use(cookieParser());
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
 
 app.use("/api/v1/user", userRouter);
 app.use("/api/v1/friend", friendRouter);
