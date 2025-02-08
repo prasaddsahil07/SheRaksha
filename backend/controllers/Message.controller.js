@@ -37,7 +37,6 @@ export const sendMessage = async (req, res) => {
     const { text } = req.body;
     console.log(req.body);
     
-    const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
     let imageUrl = null, audioUrl = null;
@@ -59,7 +58,6 @@ export const sendMessage = async (req, res) => {
     // Create new message object
     const message = new Message({
       senderId,
-      receiverId,
       text: text || "", // Ensure text field is always present
       image: imageUrl,
       audio: audioUrl,
@@ -69,9 +67,9 @@ export const sendMessage = async (req, res) => {
     const newMessage = await message.save();
 
     // Fetch the sender's friends
-    const sender = await User.findById(senderId).populate("friends");
+    // const sender = await User.findById(senderId).populate("friends");
 
-    io.emit("newMessage", newMessage);
+    io.emit("newMessage", newMessage, senderId);
       
 
     // Send response back to sender

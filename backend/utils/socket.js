@@ -11,14 +11,13 @@ const io = new Server(server, {
     },
 });
 
-const userSockets = new Map(); // Stores userId -> socketId mapping
 
 io.on("connection", function (socket) {
     console.log("Connection Established");
     socket.on("send-location", function (data) {
         console.log("Location updated...")
-        console.log(socket.id, data);
-        io.emit("recieve-location", { id: socket.id, ...data });
+        // console.log(socket.id, data);
+        io.emit("recieve-location", { id: socket.id, ...data }, );
     });
 
     socket.on("disconnect", function () {
@@ -26,4 +25,4 @@ io.on("connection", function (socket) {
     });
 });
 
-export { app, server, io, userSockets };
+export { app, server, io };
