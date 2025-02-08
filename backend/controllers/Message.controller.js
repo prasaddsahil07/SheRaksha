@@ -1,6 +1,6 @@
 import Message from "../models/Message.model.js";
 import cloudinary from "../utils/cloudinary.js";
-import { getReceiverSocketId, io } from "../utils/socket.js";
+import { io } from "../utils/socket.js";
 
 export const getMessages = async (req, res) => {
   try {

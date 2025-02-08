@@ -14,10 +14,6 @@ const io = new Server(server, {
     },
 });
 
-export function getReceiverSocketId(userId) {
-    return userSockets[userId];
-}
-
 const userSockets = new Map(); // Stores userId -> socketId mapping
 
 io.on("connection", (socket) => {
