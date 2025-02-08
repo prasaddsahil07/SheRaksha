@@ -1,46 +1,70 @@
-// Handle Show/Hide Password
-document
-  .getElementById("togglePassword")
-  .addEventListener("click", function () {
-    const passwordField = document.getElementById("password");
-    const type = passwordField.type === "password" ? "text" : "password";
-    passwordField.type = type;
-    this.textContent = type === "password" ? "Show" : "Hide";
+document.addEventListener("DOMContentLoaded", function () {
+  const loginForm = document.getElementById("loginForm");
+  const togglePassword = document.getElementById("togglePassword");
+
+  // Show/hide password functionality
+  togglePassword.addEventListener("click", function () {
+    const passwordInput = document.getElementById("password");
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      togglePassword.textContent = "Hide";
+    } else {
+      passwordInput.type = "password";
+      togglePassword.textContent = "Show";
+    }
   });
 
-// Validate Form Inputs
-document.getElementById("loginForm").addEventListener("submit", function (e) {
-  e.preventDefault();
+  // Handle form submission
+  loginForm.addEventListener("submit", async function (event) {
+    event.preventDefault(); // Prevent form from refreshing the page
 
-  const emailField = document.getElementById("email");
-  const passwordField = document.getElementById("password");
-  const emailError = document.getElementById("emailError");
-  const passwordError = document.getElementById("passwordError");
+    // Get user input values
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const emailError = document.getElementById("emailError");
+    const passwordError = document.getElementById("passwordError");
 
-  let isValid = true;
+    // Clear previous errors
+    emailError.textContent = "";
+    passwordError.textContent = "";
 
-  // Email Validation
-  if (!emailField.value || !emailField.value.includes("@")) {
-    emailError.textContent = "Please enter a valid email address.";
-    emailError.style.display = "block";
-    isValid = false;
-  } else {
-    emailError.style.display = "none";
-  }
+    // Basic validation
+    if (!email.includes("@")) {
+      emailError.textContent = "Enter a valid email.";
+      return;
+    }
+    if (password.length < 6) {
+      passwordError.textContent = "Password must be at least 6 characters.";
+      return;
+    }
 
-  // Password Validation
-  if (!passwordField.value || passwordField.value.length < 6) {
-    passwordError.textContent = "Password must be at least 6 characters long.";
-    passwordError.style.display = "block";
-    isValid = false;
-  } else {
-    passwordError.style.display = "none";
-  }
+    try {
+      const response = await fetch("http://localhost:5000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: "include" // ✅ Sends cookies for authentication
+      });
 
-  // Submit Form if Valid
-  if (isValid) {
-    alert("Login successful!");
-    // Send request to the backend or redirect the user.
-    // Example: window.location.href = 'dashboard.html';
-  }
+      const data = await response.json();
+
+      if (response.ok) {
+        // ✅ Save user session (optional, if token-based auth)
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        // ✅ Redirect to `index.html`
+        window.location.href = "index.html";
+      } else {
+        // Show error messages from the backend
+        if (data.message) {
+          alert(data.message);
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      alert("Something went wrong. Try again later.");
+    }
+  });
 });
