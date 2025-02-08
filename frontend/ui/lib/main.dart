@@ -194,7 +194,6 @@ class _MyHomePageState extends State<MyHomePage> {
         'email': email,
         'password': password
       };
-
       final String apiUrl =
           'http://localhost:5000/api/v1/user/register'; // For local development
 
