@@ -1,47 +1,47 @@
-import Location from '../models/Location.model.js';
-// import { io } from '../services/socketService.js';
+// // Haversine formula to calculate distance between two coordinates (in meters)
+// const getDistance = (lat1, lon1, lat2, lon2) => {
+//     const R = 6371000; // Earth's radius in meters
+//     const toRad = (deg) => (deg * Math.PI) / 180;
+//     const dLat = toRad(lat2 - lat1);
+//     const dLon = toRad(lon2 - lon1);
+//     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+//         Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+//         Math.sin(dLon / 2) * Math.sin(dLon / 2);
+//     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+//     return R * c;
+// };
 
-// Haversine formula to calculate distance between two coordinates (in meters)
-const getDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371000; // Earth's radius in meters
-    const toRad = (deg) => (deg * Math.PI) / 180;
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-};
+import User from "../models/User.model.js";
+import { io } from "../utils/socket.js";
 
-// Update location only if moved more than 50 meters or after 60 seconds
-export const updateLocation = async (req, res) => {
+export const sendLocation = async (req, res) => {
     try {
+        const { userId } = req.params;  // User who is sending the location
         const { latitude, longitude } = req.body;
-        const userId = req.userId;
 
-        let location = await Location.findOne({ userId });
-
-        if (location) {
-            const distance = getDistance(location.latitude, location.longitude, latitude, longitude);
-            const timeDiff = (new Date() - location.timestamp) / 1000; // Time in seconds
-
-            if (distance < 50 && timeDiff < 60) {
-                return res.status(200).json({ message: 'Location update skipped (no significant movement)' });
-            }
+        if (!latitude || !longitude) {
+            return res.status(400).json({ success: false, message: "Latitude and longitude are required" });
         }
 
-        location = await Location.findOneAndUpdate(
-            { userId },
-            { latitude, longitude, timestamp: new Date() },
-            { upsert: true, new: true }
-        );
+        // Fetch the user's friends from the database
+        const user = await User.findById(userId).populate("friends");
 
-        // Send real-time update via Socket.io (no DB write)
-        io.emit(`locationUpdate:${userId}`, location);
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
 
-        res.status(200).json({ message: 'Location updated', location });
+        // Broadcast the location to each friend
+        user.friends.forEach(friend => {
+            io.emit(`location-update-${friend._id}`, { userId, latitude, longitude, timestamp: Date.now() });
+        });
+
+        return res.status(200).json({
+            success: true,
+            message: "Location sent and broadcasted successfully",
+        });
+
     } catch (error) {
-        res.status(500).json({ message: 'Server error' });
+        console.error("Error broadcasting location:", error);
+        return res.status(500).json({ success: false, message: "Internal Server Error" });
     }
 };
