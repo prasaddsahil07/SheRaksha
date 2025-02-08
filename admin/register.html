@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1>Create an Account</h1>
+            <p>Sign up to get started</p>
+            <form>
+
+                <!-- Name Field -->
+                <label for="name">Full Name:</label>
+                <input type="text" id="name" name="name" placeholder="Enter your name" required>
+                <small class="error-message" id="nameError"></small>
+
+                <!-- Email Field -->
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Enter your email" required>
+                <small class="error-message" id="emailError"></small>
+
+                <!-- Password Field -->
+                <label for="password">Password:</label>
+                <div class="password-wrapper">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
+                    
+                </div>
+                <small class="error-message" id="passwordError"></small>
+                <small id="passwordStrength" class="password-strength">Strength: Weak</small>
+
+                <!-- Confirm Password Field -->
+                <label for="confirmPassword">Confirm Password:</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Re-enter your password" required>
+                <small class="error-message" id="confirmPasswordError"></small>
+                <small class="error-message" id="passwordError"></small>
+
+                <!-- Submit Button -->
+                <button type="submit" class="btn">Register</button>
+            </form>
+
+            <!-- Login Redirect -->
+            <p>Already have an account? <a href="login.html">Login here</a></p>
+        </div>
+    </div>
+
+    <script src="register.js"></script>
+</body>
+</html>

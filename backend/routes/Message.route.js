@@ -1,10 +1,18 @@
 import express from "express";
-import { isAuthenticated } from "../middleware/authMiddleware.js";
-import { getMessages, sendMessage } from "../controllers/Message.controller.js";
+import { sendMessage, getMessages } from "../controllers/Message.controller.js";
+import upload from "../middleware/fileHandle.js";
+import { isAuthenticated } from "../middleware/authMiddleware.js"; // Ensure authentication
 
 const router = express.Router();
 
-router.get("/:id", isAuthenticated, getMessages);
-router.post("/send/:id", isAuthenticated, sendMessage);
+// Upload multiple file types
+router.post(
+  "/send/:id",
+  isAuthenticated,
+  upload.fields([{ name: "image" }, { name: "audio" }]),
+  sendMessage
+);
+router.get("/get/:id", isAuthenticated, getMessages);
+
 
 export default router;
