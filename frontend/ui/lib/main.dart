@@ -19,7 +19,9 @@ class AboutListTileExampleApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const MaterialApp(
-      home: MyHomePage(title: title,),
+      home: MyHomePage(
+        title: title,
+      ),
     );
   }
 }
@@ -45,117 +47,174 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _signIn() async {
     return showDialog(
-      context: context, 
-      builder: (BuildContext context){
-        return AlertDialog(
-          titlePadding: EdgeInsets.zero,
-          title: SizedBox(
-            height: 100,
-            child: DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(10)),
-              child: Center(child: Text('Sign In',style: TextStyle(color: Colors.white, fontSize: 40),))),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: "Password"),
-                  obscureText: true,
-                  controller: passController,
-                )
-              ],
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            titlePadding: EdgeInsets.zero,
+            title: SizedBox(
+              height: 100,
+              child: DrawerHeader(
+                  decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(10)),
+                  child: Center(
+                      child: Text(
+                    'Sign In',
+                    style: TextStyle(color: Colors.white, fontSize: 40),
+                  ))),
             ),
-          ),
-          actions: [
-            TextButton(onPressed: (){
-              Navigator.of(context).pop();
-            }, child: Text('Cancel')),
-            TextButton(onPressed: () async{
-              setState(() {
-                _isLoggedIn = true;
-                _userName = "Logged In User";
-              });
-              Navigator.of(context).pop();
-            }, child: Text('Sign In'))
-          ],
-        );
-      });
-  }
-  Future<void> _register() async {
-    return showDialog(
-      context: context, 
-      builder: (BuildContext context){
-        return AlertDialog(
-          titlePadding: EdgeInsets.zero,
-          title: SizedBox(
-            height: 100,
-            child: DrawerHeader(
-              decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(10)),
-              child: Center(child: Text('Register',style: TextStyle(color: Colors.white, fontSize: 40),))),
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              children: [
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Name'),
-                  controller: nameController,
-                  keyboardType: TextInputType.name,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: 'Email'),
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-                TextFormField(
-                  decoration: const InputDecoration(labelText: "Password"),
-                  obscureText: true,
-                  controller: passController,
-                )
-              ],
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: "Password"),
+                    obscureText: true,
+                    controller: passController,
+                  )
+                ],
+              ),
             ),
-          ),
-          actions: [
-            TextButton(onPressed: (){
-              Navigator.of(context).pop();
-            }, child: Text('Cancel')),
-            TextButton(onPressed: () async{
-              setState(() {
-                _isLoggedIn = true;
-                _userName = nameController.text;
-              });
-              Navigator.of(context).pop();
-            }, child: Text('Register'))
-          ],
-        );
-      });
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cancel')),
+              TextButton(
+                  onPressed: () async {
+                    setState(() {
+                      _isLoggedIn = true;
+                      _userName = "Logged In User";
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Sign In'))
+            ],
+          );
+        });
   }
 
+  Future<void> _register() async {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            titlePadding: EdgeInsets.zero,
+            title: SizedBox(
+              height: 100,
+              child: DrawerHeader(
+                  decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.circular(10)),
+                  child: Center(
+                      child: Text(
+                    'Register',
+                    style: TextStyle(color: Colors.white, fontSize: 40),
+                  ))),
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Name'),
+                    controller: nameController,
+                    keyboardType: TextInputType.name,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  TextFormField(
+                    decoration: const InputDecoration(labelText: "Password"),
+                    obscureText: true,
+                    controller: passController,
+                  )
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Cancel')),
+              TextButton(
+                  onPressed: () async {
+                    setState(() {
+                      _isLoggedIn = true;
+                      _userName = nameController.text;
+                    });
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Register'))
+            ],
+          );
+        });
+  }
+
+  // Future<void> _submitForm() async {
+  //   if (_formKey.currentState!.validate()) {
+  //     _formKey.currentState!.save();
+
+  //     final String name = nameController.text;
+  //     final String email = emailController.text;
+
+  //     final Map<String, dynamic> data = {
+  //       'name': name,
+  //       'email':email
+  //     };
+
+  //     final String apiUrl = 'Insert backend';
+
+  //     final response = await http.post(
+  //       Uri.parse(apiUrl),
+  //       headers: <String, String> {
+  //         'Content-Type': 'application/json; charset=UTF-8',
+  //       },
+  //       body: jsonEncode(data),
+  //     );
+  //   }
+  // }
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
       final String name = nameController.text;
       final String email = emailController.text;
+      final String password = passController.text;
 
       final Map<String, dynamic> data = {
         'name': name,
-        'email':email
+        'email': email,
+        'password': password
       };
 
-      final String apiUrl = 'Insert backend';
+      final String apiUrl =
+          'http://localhost:5000/api/v1/user/register'; // For local development
 
-      final response = await http.post(
-        Uri.parse(apiUrl),
-        headers: <String, String> {
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(data),
-      );
+      try {
+        final response = await http.post(
+          Uri.parse(apiUrl),
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(data),
+        );
+
+        if (response.statusCode == 201) {
+          log("User registered successfully!");
+        } else {
+          log("Error: ${response.body}");
+        }
+      } catch (e) {
+        log("Error connecting to backend: $e");
+      }
     }
   }
 
@@ -200,22 +259,20 @@ class _MyHomePageState extends State<MyHomePage> {
                     spacing: 20,
                     children: [
                       CircleAvatar(
-                        radius: 50,
-                        backgroundImage: AssetImage('assets/profile.png')),
+                          radius: 50,
+                          backgroundImage: AssetImage('assets/profile.png')),
                       const SizedBox(width: 20),
-
                       if (!_isLoggedIn)
                         Column(
                           children: [
-                            ElevatedButton(onPressed: _signIn, 
-                            child: Text("Sign In")
-                            ),
-                            ElevatedButton(onPressed: (){
-                              Navigator.of(context).pop();
-                              _register();
-                            }, 
-                            child: Text("Register")
-                            ),
+                            ElevatedButton(
+                                onPressed: _signIn, child: Text("Sign In")),
+                            ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pop();
+                                  _register();
+                                },
+                                child: Text("Register")),
                           ],
                         )
                       else
@@ -229,54 +286,51 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             ListTile(
               title: const Text('Add Friends / Emergency Contacts'),
-              
               onTap: () {
                 // Update the state of the app
                 // _onItemTapped();
                 // Then close the drawer
                 Navigator.pop(context);
                 showDialog(
-                context: context,
-                builder: (BuildContext context) {
-                  return AlertDialog(
-                    scrollable: true,
-                    title: Text('Add Friendly Users'),
-                    content: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          children: <Widget>[
-                            TextFormField(
-                              controller: nameController,
-                              decoration: InputDecoration(
-                                labelText: 'Name',
-                                icon: Icon(Icons.account_box),
-                              ),
+                    context: context,
+                    builder: (BuildContext context) {
+                      return AlertDialog(
+                        scrollable: true,
+                        title: Text('Add Friendly Users'),
+                        content: Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              children: <Widget>[
+                                TextFormField(
+                                  controller: nameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Name',
+                                    icon: Icon(Icons.account_box),
+                                  ),
+                                ),
+                                TextFormField(
+                                  controller: emailController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Email',
+                                    icon: Icon(Icons.email),
+                                  ),
+                                ),
+                              ],
                             ),
-                            TextFormField(
-                              controller: emailController,
-                              decoration: InputDecoration(
-                                labelText: 'Email',
-                                icon: Icon(Icons.email),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ),
-                     actions: [
-                      ElevatedButton(
-                          onPressed: _submitForm,
-                          child: Text("Submit"))
-                    ],
-                  );
-                });
+                        actions: [
+                          ElevatedButton(
+                              onPressed: _submitForm, child: Text("Submit"))
+                        ],
+                      );
+                    });
               },
             ),
             ListTile(
               title: const Text('Edit existing Contacts'),
-
               onTap: () {
                 // Update the state of the app
                 // _onItemTapped(1);
@@ -287,12 +341,8 @@ class _MyHomePageState extends State<MyHomePage> {
             ListTile(
               title: Row(
                 spacing: 30,
-                children: [
-                  const Text('Log Out!'),
-                  Icon(Icons.exit_to_app)
-                ],
+                children: [const Text('Log Out!'), Icon(Icons.exit_to_app)],
               ),
-
               onTap: () {
                 // Update the state of the app
                 // _onItemTapped(2);
@@ -322,6 +372,7 @@ class _MappsState extends State<Mapps> {
     requestPermission();
     _getUserLocation();
   }
+
   Future<void> requestPermission() async {
     final permission = Permission.location;
 
@@ -329,10 +380,12 @@ class _MappsState extends State<Mapps> {
       await permission.request();
     }
   }
+
   LatLng currentPosition = LatLng(51.509364, -0.128928);
 
   void _getUserLocation() async {
-    var position = await GeolocatorPlatform.instance.getCurrentPosition(locationSettings:  LocationSettings());
+    var position = await GeolocatorPlatform.instance
+        .getCurrentPosition(locationSettings: LocationSettings());
     setState(() {
       currentPosition = LatLng(position.latitude, position.longitude);
     });
@@ -365,24 +418,25 @@ class _MappsState extends State<Mapps> {
 
         if (predictedSeverity > -1) {
           showDialog(
-            context: context, 
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text("Crime Alert"),
-                content: Text("Predicted crime severity: $predictedSeverity"),
-                actions: [
-                  TextButton(onPressed: (){
-                    Navigator.of(context).pop();
-                    _showShareOptionsDialog();
-                  }, child: Text("OK"))
-                ],
-              );
-            });
+              context: context,
+              builder: (BuildContext context) {
+                return AlertDialog(
+                  title: Text("Crime Alert"),
+                  content: Text("Predicted crime severity: $predictedSeverity"),
+                  actions: [
+                    TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop();
+                          _showShareOptionsDialog();
+                        },
+                        child: Text("OK"))
+                  ],
+                );
+              });
         } else {
           log("Error: ${response.statusCode}");
         }
       }
-
     } catch (e) {
       log("Error sending location to Flask: $e");
     }
@@ -473,7 +527,7 @@ class _MappsState extends State<Mapps> {
                     log("Share location: $shareLocation");
                     log("Share image: $shareImage");
                     log("Record audio: $recordAudio");
-                    
+
                     Navigator.of(context).pop();
                   },
                   child: const Text("Send"),
@@ -491,32 +545,30 @@ class _MappsState extends State<Mapps> {
       },
     );
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        initialCenter: currentPosition,
-        initialZoom: 10,
-        
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          userAgentPackageName: 'com.example.ui',
+        mapController: _mapController,
+        options: MapOptions(
+          initialCenter: currentPosition,
+          initialZoom: 10,
         ),
-        MarkerLayer(
-          markers: [
-            Marker(
-              point: currentPosition,
-              width: 80,
-              height: 80,
-              child: Icon(Icons.location_pin, color: Colors.red, size: 40),
-            ),
-          ],
-        ),
-      ]
-    );
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            userAgentPackageName: 'com.example.ui',
+          ),
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: currentPosition,
+                width: 80,
+                height: 80,
+                child: Icon(Icons.location_pin, color: Colors.red, size: 40),
+              ),
+            ],
+          ),
+        ]);
   }
 }
