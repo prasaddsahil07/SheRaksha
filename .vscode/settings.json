@@ -1,3 +1,5 @@
 {
-  "cmake.sourceDirectory": "E:/Documents/GitHub/SheRaksha/frontend/ui/windows"
+  "cmake.sourceDirectory": "E:/Documents/GitHub/SheRaksha/frontend/ui/windows",
+  "java.configuration.updateBuildConfiguration": "interactive",
+  "java.compile.nullAnalysis.mode": "automatic"
 }
