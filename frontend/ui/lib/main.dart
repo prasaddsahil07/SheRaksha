@@ -465,7 +465,7 @@ class _MyHomePageState extends State<MyHomePage> {
       rethrow;
     }
   }
-  
+
   void showFriendsDialog(BuildContext context, String token) async {
     try {
       List<Friend> friends = await fetchFriends(token);
@@ -549,20 +549,23 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
       ),
-      body: Stack(alignment: Alignment.topRight, children: [
-        Mapps(),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ElevatedButton(
-              style: ButtonStyle(
-                  backgroundColor: WidgetStatePropertyAll(Colors.red)),
-              onPressed: onPressed,
-              child: Text(
-                "SOS Button",
-                style: TextStyle(color: Colors.white),
-              )),
-        )
-      ]),
+      body: token == null
+          ? const Center(child: CircularProgressIndicator())
+          : Stack(alignment: Alignment.topRight, children: [
+              Mapps(token: token!), // Token is guaranteed to be non-null here
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor:
+                            const WidgetStatePropertyAll<Color>(Colors.red)),
+                    onPressed: onPressed,
+                    child: const Text(
+                      "SOS Button",
+                      style: TextStyle(color: Colors.white),
+                    )),
+              )
+            ]),
       drawer: Drawer(
         // Add a ListView to the drawer. This ensures the user can scroll
         // through the options in the drawer if there isn't enough vertical
@@ -681,7 +684,8 @@ class _MyHomePageState extends State<MyHomePage> {
 }
 
 class Mapps extends StatefulWidget {
-  const Mapps({super.key});
+  final String token;
+  const Mapps({Key? key, required this.token}) : super(key: key);
 
   @override
   State<Mapps> createState() => _MappsState();
@@ -835,105 +839,75 @@ class _MappsState extends State<Mapps> {
     }
   }
 
+  Future<List<Friend>> fetchFriends(String token) async {
+    final String apiUrl = 'http://172.16.16.126:5000/api/v1/friend/list';
+    try {
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json', 'Cookie': "token=$token"},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          List<dynamic> friendsJson = data['friends'];
+          return friendsJson.map((json) => Friend.fromJson(json)).toList();
+        }
+        throw Exception('Failed to load friends: ${data['message']}');
+      }
+      throw Exception('Failed to load friends: ${response.statusCode}');
+    } catch (e) {
+      log('Error fetching friends: $e');
+      rethrow;
+    }
+  }
+
   void _showShareOptionsDialog() {
-    // Sample friend list.
-    List<String> friends = ["Alice", "Bob", "Charlie"];
-    // Maintain selection state for friends.
-    List<bool> selectedFriends = List.generate(friends.length, (_) => false);
-    // Options for sharing.
-    bool shareLocation = false;
-    bool shareImage = false;
-    bool recordAudio = false;
+    // Get the token from widget
+    final String? token = widget.token;
+
+    if (token == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You must be logged in to share')),
+      );
+      return;
+    }
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        // Use StatefulBuilder to update state within the dialog.
-        return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setState) {
-            return AlertDialog(
-              title: const Text("Share Options"),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Friend list section.
-                    const Text("Select Friends:"),
-                    Column(
-                      children: List.generate(friends.length, (index) {
-                        return CheckboxListTile(
-                          title: Text(friends[index]),
-                          value: selectedFriends[index],
-                          onChanged: (bool? value) {
-                            setState(() {
-                              selectedFriends[index] = value ?? false;
-                            });
-                          },
-                        );
-                      }),
-                    ),
-                    const Divider(),
-                    // Sharing options section.
-                    const Text("Select options to share:"),
-                    CheckboxListTile(
-                      title: const Text("Share location"),
-                      value: shareLocation,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          shareLocation = value ?? false;
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text("Share image"),
-                      value: shareImage,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          shareImage = value ?? false;
-                        });
-                      },
-                    ),
-                    CheckboxListTile(
-                      title: const Text("Record audio"),
-                      value: recordAudio,
-                      onChanged: (bool? value) {
-                        setState(() {
-                          recordAudio = value ?? false;
-                        });
-                      },
-                    ),
-                  ],
+        return AlertDialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          content: Container(
+            width: 150,
+            height: 300,
+            padding: EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              image: DecorationImage(image: AssetImage('assets/back1.png'),fit: BoxFit.cover,)
+            ),
+            child: Center(
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  shadowColor: Colors.white,
+                  backgroundColor: Colors.white, // Button color
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                  textStyle: const TextStyle(fontSize: 20, color: Colors.black),
                 ),
+                onPressed: () {
+                  // TODO: Add your share location logic here
+                  print('Location shared!');
+                  Navigator.pop(context);
+                },
+                child: const Text("Share Location"),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    // Here, you can handle the selected options.
-                    // For example, collect the list of selected friends:
-                    List<String> friendsToShare = [];
-                    for (int i = 0; i < friends.length; i++) {
-                      if (selectedFriends[i]) {
-                        friendsToShare.add(friends[i]);
-                      }
-                    }
-                    log("Friends selected: $friendsToShare");
-                    log("Share location: $shareLocation");
-                    log("Share image: $shareImage");
-                    log("Record audio: $recordAudio");
-
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Send"),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Cancel"),
-                ),
-              ],
-            );
-          },
+            ),
+          ),
         );
       },
     );
