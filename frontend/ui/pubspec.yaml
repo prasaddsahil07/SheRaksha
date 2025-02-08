@@ -25,4 +25,5 @@ flutter:
   uses-material-design: true
   assets:
     - assets/profile.png
+    - assets/back1.png
 
