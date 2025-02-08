@@ -1,6 +1,6 @@
 import Message from "../models/Message.model.js";
 import User from "../models/User.model.js";
-import { io, userSockets } from "../utils/socket.js"; // Import Socket.io instance
+import { io } from "../utils/socket.js"; // Import Socket.io instance
 import cloudinary from "../utils/cloudinary.js"; // Assuming Cloudinary is used
 
 export const getMessages = async (req, res) => {
@@ -71,13 +71,8 @@ export const sendMessage = async (req, res) => {
     // Fetch the sender's friends
     const sender = await User.findById(senderId).populate("friends");
 
-    // Broadcast message to all sender's friends
-    sender.friends.forEach((friend) => {
-      const friendSocketId = userSockets.get(friend._id.toString());
-      if (friendSocketId) {
-        io.to(friendSocketId).emit("newMessage", newMessage);
-      }
-    });
+    io.emit("newMessage", newMessage);
+      
 
     // Send response back to sender
     res.status(201).json(newMessage);
