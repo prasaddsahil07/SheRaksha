@@ -39,6 +39,22 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+class Friend {
+  final String id;
+  final String name;
+  final String email;
+
+  Friend({required this.id, required this.name, required this.email});
+
+  factory Friend.fromJson(Map<String, dynamic> json) {
+    return Friend(
+      id: json['_id'],
+      name: json['firstName'],
+      email: json['email'],
+    );
+  }
+}
+
 class _MyHomePageState extends State<MyHomePage> {
   final _formKey = GlobalKey<FormState>();
   final formk = GlobalKey<FormState>();
@@ -53,6 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController genderController = TextEditingController();
   bool _isLoggedIn = false;
   String _userName = "User";
+  String? token;
 
   @override
   void initState() {
@@ -66,6 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isLoggedIn', isLoggedIn);
     await prefs.setString('userName', userName);
+    await prefs.setString('token', token!);
   }
 
   Future<void> _loadLoginStatus() async {
@@ -73,6 +91,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _isLoggedIn = status['isLoggedIn'];
       _userName = status['userName'];
+      token = status['token'];
     });
   }
 
@@ -85,9 +104,9 @@ class _MyHomePageState extends State<MyHomePage> {
       final String gender = 'Female';
 
       final Map<String, dynamic> data = {
-        'email':email,
-        'password':password,
-        'gender':gender,
+        'email': email,
+        'password': password,
+        'gender': gender,
       };
 
       final String apiUrl =
@@ -104,6 +123,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
         if (response.statusCode == 201) {
           log("User logged in!");
+          String? cookie = response.headers['set-cookie'];
+          if (cookie != null) {
+            List<String> cookies = cookie.split(';');
+
+            for (String c in cookies) {
+              if (c.trim().startsWith('token=')) {
+                token = c.trim().substring(6);
+              }
+            }
+          }
           return true;
         } else {
           log("Error: ${response.body}");
@@ -163,7 +192,7 @@ class _MyHomePageState extends State<MyHomePage> {
               TextButton(
                   onPressed: () async {
                     bool check = await _logForm();
-                    if (check){
+                    if (check) {
                       setState(() {
                         _isLoggedIn = true;
                         _userName = emailController.text;
@@ -191,13 +220,13 @@ class _MyHomePageState extends State<MyHomePage> {
       final String gender = 'Female';
 
       final Map<String, dynamic> data = {
-        'firstName':fname,
-        'lastName':lName,
-        'email':email,
-        'password':password,
-        'gender':gender,
-        'address':addr,
-        'phone':ph
+        'firstName': fname,
+        'lastName': lName,
+        'email': email,
+        'password': password,
+        'gender': gender,
+        'address': addr,
+        'phone': ph
       };
 
       final String apiUrl =
@@ -214,6 +243,16 @@ class _MyHomePageState extends State<MyHomePage> {
 
         if (response.statusCode == 201) {
           log("User registered successfully!");
+          String? cookie = response.headers['set-cookie'];
+          if (cookie != null) {
+            List<String> cookies = cookie.split(';');
+
+            for (String c in cookies) {
+              if (c.trim().startsWith('token=')) {
+                token = c.trim().substring(6);
+              }
+            }
+          }
         } else {
           log("Error: ${response.body}");
         }
@@ -247,7 +286,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Column(
                   children: [
                     TextFormField(
-                      decoration: const InputDecoration(labelText: 'First Name'),
+                      decoration:
+                          const InputDecoration(labelText: 'First Name'),
                       controller: fnameController,
                       keyboardType: TextInputType.name,
                     ),
@@ -271,11 +311,11 @@ class _MyHomePageState extends State<MyHomePage> {
                       controller: addrController,
                     ),
                     TextFormField(
-                      decoration: const InputDecoration(labelText: "Phone Number"),
+                      decoration:
+                          const InputDecoration(labelText: "Phone Number"),
                       controller: phoneController,
                       keyboardType: TextInputType.number,
                     ),
-                
                   ],
                 ),
               ),
@@ -327,30 +367,27 @@ class _MyHomePageState extends State<MyHomePage> {
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-
-      final String name = nameController.text;
       final String email = emailController.text;
-      final String password = passController.text;
+      // final String password = passController.text;
 
-      final Map<String, dynamic> data = {
-        'name': name,
-        'email': email
-      };
+      final Map<String, dynamic> data = {'friendEmail': email};
 
       final String apiUrl =
-          'Enter backend'; // For local development
+          'http://172.16.16.126:5000/api/v1/friend/add'; // For local development
 
       try {
         final response = await http.post(
           Uri.parse(apiUrl),
           headers: <String, String>{
             'Content-Type': 'application/json; charset=UTF-8',
+            'Cookie': "token=$token"
           },
           body: jsonEncode(data),
         );
 
-        if (response.statusCode == 201) {
+        if (response.statusCode == 200) {
           log("User registered successfully!");
+          Navigator.of(context).pop();
         } else {
           log("Error: ${response.body}");
         }
@@ -365,6 +402,136 @@ class _MyHomePageState extends State<MyHomePage> {
   //     _selectedIndex = index;
   //   });
   // }
+  Future<List<Friend>> fetchFriends(String token) async {
+    final String apiUrl =
+        'http://172.16.16.126:5000/api/v1/friend/list'; // Replace with your actual API endpoint
+    try {
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'application/json', 'Cookie': "token=$token"},
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          List<dynamic> friendsJson = data['friends'];
+          List<Friend> friends =
+              friendsJson.map((json) => Friend.fromJson(json)).toList();
+          return friends;
+        } else {
+          throw Exception('Failed to load friends: ${data['message']}');
+        }
+      } else {
+        throw Exception(
+            'Failed to load friends: Status Code ${response.statusCode}');
+      }
+    } catch (e) {
+      log('Error fetching friends: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> removeFriend(String token, String friendId) async {
+    // Adjust the endpoint URL as needed
+    final String apiUrl = 'http://172.16.16.126:5000/api/v1/friend/remove';
+
+    try {
+      final response = await http.delete(
+        Uri.parse(apiUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          // Passing token via a cookie header; adjust as needed for your auth scheme.
+          'Cookie': 'token=$token',
+        },
+        // Sending friendId in the request body as JSON.
+        body: jsonEncode({'friendId': friendId}),
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          // Successfully removed friend.
+          print(data['message']);
+          Navigator.of(context).pop();
+        } else {
+          throw Exception('Failed to remove friend: ${data['message']}');
+        }
+      } else {
+        throw Exception(
+            'Failed to remove friend: Status Code ${response.statusCode}');
+      }
+    } catch (e) {
+      log('Error removing friend: $e');
+      rethrow;
+    }
+  }
+  
+  void showFriendsDialog(BuildContext context, String token) async {
+    try {
+      List<Friend> friends = await fetchFriends(token);
+
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Manage Friends'),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: friends.length,
+                itemBuilder: (context, index) {
+                  final friend = friends[index];
+                  return Card(
+                    elevation: 3,
+                    margin:
+                        const EdgeInsets.symmetric(vertical: 5, horizontal: 10),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.blue,
+                        child: Text(friend.name[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white)),
+                      ),
+                      title: Text(friend.name),
+                      subtitle: Text(friend.email),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.delete, color: Colors.red),
+                        onPressed: () async {
+                          try {
+                            await removeFriend(token, friend.id);
+                            // Optionally update your UI (e.g., remove the friend from a list) after deletion.
+                          } catch (e) {
+                            // Display an error message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  content: Text('Error removing friend: $e')),
+                            );
+                          }
+                        },
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            actions: <Widget>[
+              TextButton(
+                child: const Text('Close'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            ],
+          );
+        },
+      );
+    } catch (e) {
+      // Handle the error (e.g., show a snackbar)
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load friends: $e')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -382,19 +549,20 @@ class _MyHomePageState extends State<MyHomePage> {
           },
         ),
       ),
-      body: Stack(
-        alignment: Alignment.topRight,
-        children: [
+      body: Stack(alignment: Alignment.topRight, children: [
         Mapps(),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: ElevatedButton(style: ButtonStyle(
-            backgroundColor: WidgetStatePropertyAll(Colors.red)),
-          onPressed: onPressed, child: Text("SOS Button",
-          style: TextStyle(color: Colors.white),)),
+          child: ElevatedButton(
+              style: ButtonStyle(
+                  backgroundColor: WidgetStatePropertyAll(Colors.red)),
+              onPressed: onPressed,
+              child: Text(
+                "SOS Button",
+                style: TextStyle(color: Colors.white),
+              )),
         )
-        ]
-      ),
+      ]),
       drawer: Drawer(
         // Add a ListView to the drawer. This ensures the user can scroll
         // through the options in the drawer if there isn't enough vertical
@@ -458,13 +626,6 @@ class _MyHomePageState extends State<MyHomePage> {
                             child: Column(
                               children: <Widget>[
                                 TextFormField(
-                                  controller: nameController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Name',
-                                    icon: Icon(Icons.account_box),
-                                  ),
-                                ),
-                                TextFormField(
                                   controller: emailController,
                                   decoration: InputDecoration(
                                     labelText: 'Email',
@@ -484,11 +645,12 @@ class _MyHomePageState extends State<MyHomePage> {
               },
             ),
             ListTile(
-              title: const Text('Edit existing Contacts'),
+              title: const Text('Manage Friends'),
               onTap: () {
                 // Update the state of the app
                 // _onItemTapped(1);
                 // Then close the drawer
+                showFriendsDialog(context, token!);
                 Navigator.pop(context);
               },
             ),
@@ -497,7 +659,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 spacing: 30,
                 children: [const Text('Log Out!'), Icon(Icons.exit_to_app)],
               ),
-              onTap: () async{
+              onTap: () async {
                 // Update the state of the app
                 // _onItemTapped(2);
                 // Then close the drawer
@@ -531,7 +693,7 @@ class _MappsState extends State<Mapps> {
   LatLng currentPosition = LatLng(51.509364, -0.128928);
   double _crimeSeverity = 0.0;
   List<dynamic> _gridData = [];
-  
+
   @override
   void initState() {
     super.initState();
@@ -546,7 +708,7 @@ class _MappsState extends State<Mapps> {
   }
 
   @override
-  void dispose(){
+  void dispose() {
     _locationTimer?.cancel();
     super.dispose();
   }
@@ -594,6 +756,7 @@ class _MappsState extends State<Mapps> {
       log("Error fetching grid data from Flask: $e");
     }
   }
+
   void _updateLocationAndGrid() async {
     try {
       var position = await GeolocatorPlatform.instance.getCurrentPosition(
@@ -608,7 +771,6 @@ class _MappsState extends State<Mapps> {
       log("Error getting user location: $e");
     }
   }
-
 
   void _getUserLocation() async {
     var position = await GeolocatorPlatform.instance
@@ -672,8 +834,6 @@ class _MappsState extends State<Mapps> {
       log("Error sending location to Flask: $e");
     }
   }
-
-  
 
   void _showShareOptionsDialog() {
     // Sample friend list.
@@ -805,24 +965,24 @@ class _MappsState extends State<Mapps> {
             userAgentPackageName: 'com.example.ui',
           ),
           if (heatmapPoints.isNotEmpty)
-          HeatMapLayer(
-            key: ValueKey(_gridData.hashCode),
-            heatMapDataSource: InMemoryHeatMapDataSource(data: heatmapPoints),
-            heatMapOptions: HeatMapOptions(
-              radius: 35,
-              minOpacity: 0.3,
-              blurFactor: 0.5,
-              layerOpacity: 0.75,
-              // Define a gradient mapping weight values to colors.
-              gradient: {
-                0.2: Colors.green,
-                0.5: Colors.yellow,
-                1.0: Colors.red,
-              },
+            HeatMapLayer(
+              key: ValueKey(_gridData.hashCode),
+              heatMapDataSource: InMemoryHeatMapDataSource(data: heatmapPoints),
+              heatMapOptions: HeatMapOptions(
+                radius: 35,
+                minOpacity: 0.3,
+                blurFactor: 0.5,
+                layerOpacity: 0.75,
+                // Define a gradient mapping weight values to colors.
+                gradient: {
+                  0.2: Colors.green,
+                  0.5: Colors.yellow,
+                  1.0: Colors.red,
+                },
+              ),
+              // If your version of the plugin expects a reset stream, include it; otherwise, remove.
+              reset: Stream.empty(),
             ),
-            // If your version of the plugin expects a reset stream, include it; otherwise, remove.
-            reset: Stream.empty(),
-          ),
           MarkerLayer(
             markers: [
               Marker(
