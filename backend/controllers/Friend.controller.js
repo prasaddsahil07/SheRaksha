@@ -65,6 +65,6 @@ export const removeFriend = catchAsyncErrors(async (req, res, next) => {
 
 // ✅ Get All Friends
 export const getFriends = catchAsyncErrors(async (req, res, next) => {
-    const user = await User.findById(req.user._id).populate('friends', 'name email');
+    const user = await User.findById(req.user._id).populate('friends', 'firstName email');
     res.status(200).json({ success: true, friends: user.friends });
 });
