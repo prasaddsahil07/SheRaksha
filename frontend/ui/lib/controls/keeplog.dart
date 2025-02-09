@@ -6,8 +6,9 @@ Future<Map<String, dynamic>> checkLoginStatus() async {
   final isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
   final userName = prefs.getString('userName') ?? 'User';
   final token = prefs.getString('token') ?? '';
+  final id = prefs.getString('id') ?? '';
 
-  return {'isLoggedIn': isLoggedIn, 'userName':userName, 'token':token};
+  return {'isLoggedIn': isLoggedIn, 'userName':userName, 'token':token, 'id':id};
 }
 
 Future<void> logoutUser() async {
@@ -15,4 +16,5 @@ Future<void> logoutUser() async {
   await prefs.setBool('isLoggedIn', false);
   await prefs.setString('userName','User'); 
   await prefs.setString('token', '');
+  await prefs.setString('id', '');
 }

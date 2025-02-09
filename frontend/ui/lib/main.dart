@@ -77,6 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
   TextEditingController genderController = TextEditingController();
   bool _isLoggedIn = false;
   String _userName = "User";
+  String id = "";
   String? token;
 
   @override
@@ -92,6 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
     await prefs.setBool('isLoggedIn', isLoggedIn);
     await prefs.setString('userName', userName);
     await prefs.setString('token', token!);
+    await prefs.setString('id',id!);
   }
 
   Future<void> _loadLoginStatus() async {
@@ -100,6 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
       _isLoggedIn = status['isLoggedIn'];
       _userName = status['userName'];
       token = status['token'];
+      id = status['id'];
     });
   }
 
@@ -541,8 +544,8 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  void fetchUser(String userId) async {
-    final url = Uri.parse('http://172.16.16.126:5000/api/v1/getUser/$userId');
+  void fetchUser() async {
+    final url = Uri.parse('http://172.16.16.126:5000/api/v1/getUser/$id');
     final response = await http.get(url, headers: {
       'Content-Type': 'application/json',
           // Passing token via a cookie header; adjust as needed for your auth scheme.
@@ -582,7 +585,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: ButtonStyle(
                         backgroundColor:
                             const WidgetStatePropertyAll<Color>(Colors.red)),
-                    onPressed: () {fetchUser(_userName);} ,
+                    onPressed: () {fetchUser();} ,
                     child: const Text(
                       "SOS Button",
                       style: TextStyle(color: Colors.white),
@@ -938,7 +941,7 @@ class _MappsState extends State<Mapps> {
     }
   }
   
-  
+
   
 
   void _showShareOptionsDialog() {
