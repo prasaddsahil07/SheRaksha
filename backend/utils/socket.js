@@ -13,10 +13,10 @@ const io = new Server(server, {
 
 
 io.on("connection", function (socket) {
-    console.log("Connection Established");
+    console.log(`Connection Established by ${socket.id}`);
     socket.on("send-location", function (data) {
-        console.log("Location updated...")
-        // console.log(socket.id, data);
+        console.log(`Location updated by ${socket.id}`)
+        console.log(data);
         io.emit("recieve-location", { id: socket.id, ...data }, );
     });
 
