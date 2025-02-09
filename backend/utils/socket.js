@@ -1,155 +1,28 @@
 import http from "http";
 import express from "express";
-import User from "../models/User.model.js";
+import { Server } from "socket.io";
 
 const app = express();
 const server = http.createServer(app);
 
-// const io = new Server(server, {
-//     cors: {
-//         origin: process.env.FRONTEND_URL,
-//         methods: ["GET", "POST", "DELETE", "PUT"],
-//         credentials: true,
-//     },
-// });
-
-// const userSockets = new Map(); // Stores userId -> socketId mapping
-
-// io.on("connection", (socket) => {
-//     const userId = socket.handshake.query.userId;
-//     userSockets.set(userId, socket.id);
-//     console.log(`User ${userId} connected with socket ID ${socket.id}`);
-
-
-//     socket.on("sendMessage", async ({ senderId, content }) => {
-//         try {
-//             const user = await User.findById(senderId).populate("friends");
-//             if (!user) return;
-
-//             const newMessage = new Message({
-//                 senderId,
-//                 ...content, // content can include text, image URL, audio URL, video URL
-//             });
-
-//             await newMessage.save();
-
-//             user.friends.forEach((friend) => {
-//                 const friendSocketId = userSockets.get(friend._id.toString());
-//                 if (friendSocketId) {
-//                     io.to(friendSocketId).emit("newMessage", newMessage);
-//                 }
-//             });
-//         } catch (error) {
-//             console.error("Error sending message:", error);
-//         }
-//     });
-
-//     socket.on("startLocationSharing", async ({ userId }) => {
-//         try {
-//             const user = await User.findById(userId).populate("friends");
-//             if (!user) return;
-
-//             user.friends.forEach((friend) => {
-//                 const friendSocketId = userSockets.get(friend._id.toString());
-//                 if (friendSocketId) {
-//                     io.to(friendSocketId).emit("friendStartedSharingLocation", { userId });
-//                 }
-//             });
-//         } catch (error) {
-//             console.error("Error starting location sharing:", error);
-//         }
-//     });
-
-//     socket.on("updateLocation", async ({ userId, lat, lon }) => {
-//         const user = await User.findById(userId).populate("friends");
-//         if (!user) return;
-
-//         user.friends.forEach((friend) => {
-//             const friendSocketId = userSockets.get(friend._id.toString());
-//             if (friendSocketId) {
-//                 io.to(friendSocketId).emit("friendLocationUpdate", { userId, lat, lon });
-//             }
-//         });
-//     });
-
-//     socket.on("stopLocationSharing", async ({ userId }) => {
-//         const user = await User.findById(userId).populate("friends");
-//         if (!user) return;
-
-//         user.friends.forEach((friend) => {
-//             const friendSocketId = userSockets.get(friend._id.toString());
-//             if (friendSocketId) {
-//                 io.to(friendSocketId).emit("friendStoppedSharingLocation", { userId });
-//             }
-//         });
-//     });
-
-
-//     socket.on("sendEmergency", async ({ userId, lat, lon, image, audio }) => {
-//         try {
-//             const user = await User.findById(userId).populate("friends");
-//             if (!user) return;
-
-//             user.friends.forEach((friend) => {
-//                 const friendSocketId = userSockets.get(friend._id.toString());
-//                 if (friendSocketId) {
-//                     io.to(friendSocketId).emit("receiveEmergency", {
-//                         userId,
-//                         lat,
-//                         lon,
-//                         image,
-//                         audio,
-//                     });
-//                 }
-//             });
-//         } catch (error) {
-//             console.error("Error sending emergency alert:", error);
-//         }
-//     });
-
-//     // Handle disconnection
-//     socket.on("disconnect", () => {
-//         userSockets.delete(userId);
-//         console.log(`User ${userId} disconnected`);
-//     });
-// });
-
-
-// export { io, app, server };
-
-
-
-
-
-
-
-import { Server } from "socket.io";
-
 const io = new Server(server, {
-  cors: {
-    origin: "*", // Adjust as needed
-  },
+    cors: {
+        origin: "*", // Adjust as needed
+    },
 });
 
-const userSockets = new Map(); // Store userId -> socketId mappings
 
-io.on("connection", (socket) => {
-  console.log(`User connected: ${socket.id}`);
-
-  // Store user's socket ID when they log in
-  socket.on("registerUser", (userId) => {
-    userSockets.set(userId, socket.id);
-  });
-
-  // Remove user when they disconnect
-  socket.on("disconnect", () => {
-    userSockets.forEach((value, key) => {
-      if (value === socket.id) {
-        userSockets.delete(key);
-      }
+io.on("connection", function (socket) {
+    console.log("Connection Established");
+    socket.on("send-location", function (data) {
+        console.log("Location updated...")
+        // console.log(socket.id, data);
+        io.emit("recieve-location", { id: socket.id, ...data }, );
     });
-    console.log(`User disconnected: ${socket.id}`);
-  });
+
+    socket.on("disconnect", function () {
+        io.emit("user-disconnected", socket.id);
+    });
 });
 
-export { app, server, io, userSockets };
+export { app, server, io };
