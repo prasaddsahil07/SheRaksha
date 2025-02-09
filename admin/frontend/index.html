@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,34 +13,55 @@
             margin: 0;
             padding: 20px;
         }
+
         h2 {
             color: #333;
         }
+
         table {
             width: 100%;
             margin: 20px auto;
             border-collapse: collapse;
             background: white;
         }
-        th, td {
+
+        th,
+        td {
             padding: 12px;
             border: 1px solid #ddd;
             text-align: center;
         }
+
         th {
             background: #007BFF;
             color: white;
         }
+
         .pending {
             background: #ffcc00;
             color: black;
         }
+
         .resolved {
             background: #28a745;
             color: white;
         }
+
+        .review-btn {
+            background: #ff6600;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .review-btn:hover {
+            background: #e65c00;
+        }
     </style>
 </head>
+
 <body>
 
     <h2>🚔 Police SOS Dashboard</h2>
@@ -52,6 +74,7 @@
                 <th>Location</th>
                 <th>Time</th>
                 <th>Status</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody id="sos-list">
@@ -62,15 +85,28 @@
     <script>
         async function fetchSOSRequests() {
             try {
-                const response = await fetch("http://localhost:5000/api/sos"); // Change URL as needed
-                const sosData = await response.json();
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    console.error("No authentication token found. Please login first.");
+                    return;
+                }
 
+                const response = await fetch("http://127.0.0.1:5000/api/sos", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) throw new Error("Unauthorized or error fetching SOS requests");
+
+                const sosData = await response.json();
                 const tableBody = document.getElementById("sos-list");
                 tableBody.innerHTML = ""; // Clear table before updating
 
                 sosData.forEach(request => {
                     const row = document.createElement("tr");
-                    
+
                     row.innerHTML = `
                         <td>${request.username}</td>
                         <td>${request.phone}</td>
@@ -78,6 +114,9 @@
                         <td>${request.latitude}, ${request.longitude}</td>
                         <td>${new Date(request.timestamp).toLocaleString()}</td>
                         <td class="${request.status === 'Pending' ? 'pending' : 'resolved'}">${request.status}</td>
+                        <td>
+                            ${request.status === "Pending" ? `<button class="review-btn" onclick="reviewSOS('${request.id}', '${request.latitude}', '${request.longitude}')">Review</button>` : "Reviewed"}
+                        </td>
                     `;
 
                     tableBody.appendChild(row);
@@ -87,9 +126,36 @@
             }
         }
 
+        async function reviewSOS(sosId, latitude, longitude) {
+            try {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                    console.error("No authentication token found. Please login first.");
+                    return;
+                }
+
+                const response = await fetch("http://127.0.0.1:5000/api/review-sos", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ sosId, latitude, longitude })
+                });
+
+                if (!response.ok) throw new Error("Error reviewing SOS request");
+
+                alert("SOS reviewed successfully and added to crime history.");
+                fetchSOSRequests(); // Refresh table
+            } catch (error) {
+                console.error("Error reviewing SOS:", error);
+            }
+        }
+
         fetchSOSRequests(); // Load data when the page loads
         setInterval(fetchSOSRequests, 30000); // Auto-refresh every 30 seconds
     </script>
 
 </body>
+
 </html>
