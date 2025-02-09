@@ -5,7 +5,7 @@ import os
 sos_routes = Blueprint('sos_routes', __name__)
 
 # Path to crime history CSV file
-CRIME_HISTORY_FILE = "crime_history.csv"
+CRIME_HISTORY_FILE = "women_crime_data_2.csv"
 
 @sos_routes.route('/api/review-sos', methods=['POST'])
 def review_sos():
