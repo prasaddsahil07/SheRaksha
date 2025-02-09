@@ -541,6 +541,21 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  void fetchUser(String userId) async {
+    final url = Uri.parse('http://172.16.16.126:5000/api/v1/getUser/$userId');
+    final response = await http.get(url, headers: {
+      'Content-Type': 'application/json',
+          // Passing token via a cookie header; adjust as needed for your auth scheme.
+      'Cookie': 'token=$token',
+    });
+    if(response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      log("User data: ${[data['user']]}");
+    } else {
+      log("Error: ${response.statusCode} - ${response.body}");
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -567,7 +582,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     style: ButtonStyle(
                         backgroundColor:
                             const WidgetStatePropertyAll<Color>(Colors.red)),
-                    onPressed: onPressed,
+                    onPressed: () {fetchUser(_userName);} ,
                     child: const Text(
                       "SOS Button",
                       style: TextStyle(color: Colors.white),
@@ -922,6 +937,7 @@ class _MappsState extends State<Mapps> {
       log("Selected audio: $_audioPath");
     }
   }
+  
   
   
 
