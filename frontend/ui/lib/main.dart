@@ -1,17 +1,25 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:async';
+import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_sound/public/flutter_sound_recorder.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:ui/socket_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'controls/keeplog.dart';
 import 'package:flutter_map_heatmap/flutter_map_heatmap.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Flutter code sample for [AboutListTile].
 
@@ -685,7 +693,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
 class Mapps extends StatefulWidget {
   final String token;
-  const Mapps({Key? key, required this.token}) : super(key: key);
+  const Mapps({super.key, required this.token});
 
   @override
   State<Mapps> createState() => _MappsState();
@@ -709,12 +717,15 @@ class _MappsState extends State<Mapps> {
     _locationTimer = Timer.periodic(Duration(seconds: 5), (timer) {
       _updateLocationAndGrid();
     });
+    socketService = SocketService(userId: '67a62b05a2f7d6c57bcf674f');
+    socketService.initSocket();
   }
 
   @override
   void dispose() {
     _locationTimer?.cancel();
-    super.dispose();
+    socketService.dispose();
+    super.dispose();   
   }
 
   Future<void> requestPermission() async {
@@ -784,6 +795,32 @@ class _MappsState extends State<Mapps> {
     });
     _mapController.move(currentPosition, 16);
     _sendLocationtoFlask(currentPosition);
+  }
+
+  Future<void> _redirectToGoogleMaps(double latitude, double longitude) async {
+    final Uri googleMapsUrl = Uri.parse('https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
+
+    await launchUrl(googleMapsUrl);
+  }
+
+
+  void _redirectToSafeLocation() {
+    if (_gridData.isEmpty) {
+      log('No grid data available for safe location redirection.');
+      return;
+    }
+
+    final safePoint = _gridData.reduce((curr, next) =>
+        (curr['predicted_crime_severity'] as num) < (next['predicted_crime_severity'] as num)
+            ? curr
+            : next);
+
+    final double safeLat = (safePoint['latitude'] as num).toDouble();
+    final double safeLon = (safePoint['longitude'] as num).toDouble();
+    LatLng safeLocation = LatLng(safeLat, safeLon);
+
+    _mapController.move(safeLocation, 16);
+    _redirectToGoogleMaps(safeLat, safeLon);
   }
 
   void _sendLocationtoFlask(LatLng location) async {
@@ -862,9 +899,35 @@ class _MappsState extends State<Mapps> {
     }
   }
 
+  late SocketService socketService;
+  bool isSharingLocation = false;
+  
+  void _toggleLocationSharing(){
+    if (isSharingLocation) {
+      socketService.stopLocationSharing();
+    }
+    else {
+      socketService.startLocationSharing();
+    }
+    setState(() {
+      isSharingLocation = !isSharingLocation;
+      _showShareOptionsDialog();
+    });
+  }
+  String? _audioPath;
+  Future<void> _pickAudioFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(type: FileType.audio);
+    if (result != null && result.files.single.path != null) {
+      setState(() => _audioPath = result.files.single.path!);
+      log("Selected audio: $_audioPath");
+    }
+  }
+  
+  
+
   void _showShareOptionsDialog() {
     // Get the token from widget
-    final String? token = widget.token;
+    final String token = widget.token;
 
     if (token == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -884,28 +947,98 @@ class _MappsState extends State<Mapps> {
           ),
           content: Container(
             width: 150,
-            height: 300,
+            height: 600,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
               image: DecorationImage(image: AssetImage('assets/back1.png'),fit: BoxFit.cover,)
             ),
-            child: Center(
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  shadowColor: Colors.white,
-                  backgroundColor: Colors.white, // Button color
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                  textStyle: const TextStyle(fontSize: 20, color: Colors.black),
+            child: Column(
+              spacing: 5,
+              children: [
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shadowColor: Colors.white,
+                    backgroundColor: Colors.white, // Button color
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                    textStyle: const TextStyle(fontSize: 20, color: Colors.black),
+                  ),
+                  onPressed: () {
+                    // TODO: Add your share location logic here
+                    _toggleLocationSharing();
+                    log('Location shared!');
+                  },
+                  child: Text(isSharingLocation
+                    ? 'Stop Sharing Location'
+                    : 'Start Sharing Location'),
                 ),
-                onPressed: () {
-                  // TODO: Add your share location logic here
-                  print('Location shared!');
-                  Navigator.pop(context);
-                },
-                child: const Text("Share Location"),
-              ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shadowColor: Colors.white,
+                    backgroundColor: Colors.white, // Button color
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                    textStyle: const TextStyle(fontSize: 20, color: Colors.black),
+                  ),
+                  onPressed: () {
+                    // TODO: Add your share location logic here
+                    _redirectToSafeLocation();
+                    log('Location shared!');
+                  },
+                  child: Text('Redirect to Safe Location'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shadowColor: Colors.white,
+                    backgroundColor: Colors.white, // Button color
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
+                    textStyle: const TextStyle(fontSize: 20, color: Colors.black),
+                  ),
+                  onPressed: () {
+                    // TODO: Add your share location logic here
+                    log('Media Shared!');
+                    showModalBottomSheet(context: context, builder: (BuildContext context) {
+                      return Container(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                              ListTile(
+                                leading: const Icon(Icons.camera_alt, size: 30,),
+                                title: const Text("Capture Image"),
+                                onTap: () async {
+                                  Navigator.of(context).pop();
+                                  final ImagePicker picker = ImagePicker();
+                                  final XFile? image = await picker.pickImage(
+                                    source: ImageSource.camera,
+                                  );
+                                  if (image != null) {
+                                    log("Image captured: ${image.path}");
+                                  }
+                                  else{
+                                    log("No image captured.");
+                                  }
+                                },
+                              ),
+                              ListTile(
+                                leading: Icon(Icons.audiotrack),
+                                title: Text("Upload Audio"),
+                                onTap: () {
+                                  Navigator.pop(context);
+                                  _pickAudioFile();
+                                  log("Audio uploaded");
+                                },
+                              ),
+                          ],
+                        ),
+                      );
+                    });
+                  },
+                  child: Text('Share Media'),
+                )
+              ],
             ),
           ),
         );
